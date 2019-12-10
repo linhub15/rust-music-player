@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::{thread, time};
+use rodio::Sink;
 
 fn main() {
     let song: File = File::open("clear-as-water.mp3").unwrap();
@@ -23,20 +24,20 @@ fn main() {
     sink.sleep_until_end();
 }
 
-fn play(song: File) -> rodio::Sink {
+fn play(song: File) -> Sink {
     let device = rodio::default_output_device().unwrap();
-    let sink = rodio::Sink::new(&device);
+    let sink = Sink::new(&device);
     let decoder = rodio::Decoder::new(BufReader::new(song)).unwrap();
     sink.append(decoder);
     sink
 }
 
-fn pause(sink: &rodio::Sink) -> &rodio::Sink {
+fn pause(sink: &Sink) -> &Sink {
     sink.pause();
     sink
 }
 
-fn resume(sink: &rodio::Sink) -> &rodio::Sink {
+fn resume(sink: &Sink) -> &Sink {
     sink.play();
     sink
 }
