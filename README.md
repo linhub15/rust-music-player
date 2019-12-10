@@ -1,10 +1,14 @@
 # rust-music-player
 Music management app for djs built in rust
 
-GUI - orbtk
+# Dependencies
+rodio
+
+## Dev dependencies
+* libsdl2-dev needed for rodio
 
 ## Goals
-* open window in Orbtk
+Open and play an mp3 file
 
 
 ## Future Goals
