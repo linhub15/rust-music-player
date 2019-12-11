@@ -1,27 +1,44 @@
-use std::fs::File;
-use std::io::BufReader;
-use std::{thread, time};
 use rodio::Sink;
+use std::fs::File;
+use std::io::{stdin, stdout, BufReader, Write};
 
 fn main() {
-    let song: File = load_song("clear-as-water.mp3");
-    let song_2: File = load_song("kaze-no-toorimichi.mp3");
+    let mut s = String::new();
+    let device = rodio::default_output_device().unwrap();
+    let sink = Sink::new(&device);
 
-    let sink = play(song);
-
-    let duration = time::Duration::from_millis(3000);
-    thread::sleep(duration);
-
-    let sink = pause(&sink);
-
-    let duration = time::Duration::from_millis(3000);
-    thread::sleep(duration);
-
-    let sink = resume(&sink);
-    pause(&sink);
-
-    let sink = play(song_2);
-    sink.sleep_until_end();
+    loop {
+        println!("'s' to start. 'p' to pause. 'x' to exit.");
+        let _ = stdout().flush();
+        s.clear();
+        stdin()
+            .read_line(&mut s)
+            .expect("Did not enter a correct string");
+        if let Some('\n') = s.chars().next_back() {
+            s.pop();
+        }
+        if let Some('\r') = s.chars().next_back() {
+            s.pop();
+        }
+        println!("You typed: {}", s);
+        match s.as_ref() {
+            "x" => break,
+            "s" => {
+                std::thread::spawn(move || {
+                    let sink = play(load_song("clear-as-water.mp3"));
+                    sink.sleep_until_end();
+                }).;
+            }
+            "p" => {
+                // This doesn't work because I can't access sink from thread
+                // maybe this can help
+                // https://stackoverflow.com/questions/26199926/how-to-terminate-or-suspend-a-rust-thread-from-another-thread
+                println!("{:?}", sink.len());
+                pause(&sink);
+            }
+            _ => println!("{} is invalid", s),
+        }
+    }
 }
 
 fn load_song(path: &str) -> File {
@@ -42,7 +59,9 @@ fn pause(sink: &Sink) -> &Sink {
 }
 
 fn resume(sink: &Sink) -> &Sink {
-    if sink.empty() { return sink; }
+    if sink.empty() {
+        return sink;
+    }
     sink.play();
     sink
 }
