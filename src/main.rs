@@ -4,8 +4,8 @@ use std::{thread, time};
 use rodio::Sink;
 
 fn main() {
-    let song: File = File::open("clear-as-water.mp3").unwrap();
-    let song_2: File = File::open("kaze-no-toorimichi.mp3").unwrap();
+    let song: File = load_song("clear-as-water.mp3");
+    let song_2: File = load_song("kaze-no-toorimichi.mp3");
 
     let sink = play(song);
 
@@ -24,6 +24,10 @@ fn main() {
     sink.sleep_until_end();
 }
 
+fn load_song(path: &str) -> File {
+    File::open(path).unwrap()
+}
+
 fn play(song: File) -> Sink {
     let device = rodio::default_output_device().unwrap();
     let sink = Sink::new(&device);
@@ -38,6 +42,7 @@ fn pause(sink: &Sink) -> &Sink {
 }
 
 fn resume(sink: &Sink) -> &Sink {
+    if sink.empty() { return sink; }
     sink.play();
     sink
 }
