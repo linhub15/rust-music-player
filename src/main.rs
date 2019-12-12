@@ -1,16 +1,21 @@
 use rodio::Sink;
 use std::fs::File;
 use std::io::{stdin, stdout, BufReader, Write};
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::thread::JoinHandle;
 
 fn main() {
-    let mut s = String::new();
-    let device = rodio::default_output_device().unwrap();
-    let sink = Sink::new(&device);
+    let (tx, rx) = mpsc::channel();
+    let handler = input_thread(tx);
+    song_thread(rx);
+    handler.join().unwrap();
+}
 
-    loop {
+fn input_thread(tx: Sender<String>) -> JoinHandle<()> {
+    std::thread::spawn(move || loop {
         println!("'s' to start. 'p' to pause. 'x' to exit.");
         let _ = stdout().flush();
-        s.clear();
+        let mut s = String::new();
         stdin()
             .read_line(&mut s)
             .expect("Did not enter a correct string");
@@ -21,22 +26,29 @@ fn main() {
             s.pop();
         }
         println!("You typed: {}", s);
+        let tx1 = mpsc::Sender::clone(&tx);
+        tx1.send(s).unwrap();
+    })
+}
+
+fn song_thread(rx: Receiver<String>) {
+    let mut threads: Vec<std::thread::JoinHandle<()>> = Vec::new();
+    let sink = empty_sink();
+
+    for s in rx {
         match s.as_ref() {
-            "x" => break,
-            "s" => {
-                std::thread::spawn(move || {
-                    let sink = play(load_song("clear-as-water.mp3"));
-                    sink.sleep_until_end();
-                }).;
-            }
             "p" => {
-                // This doesn't work because I can't access sink from thread
-                // maybe this can help
-                // https://stackoverflow.com/questions/26199926/how-to-terminate-or-suspend-a-rust-thread-from-another-thread
-                println!("{:?}", sink.len());
-                pause(&sink);
+                threads.remove(0).thread().unpark();
+                let sink = pause(&sink);
             }
-            _ => println!("{} is invalid", s),
+            "s" => {
+                let thread = std::thread::spawn(move || {
+                    let sink = play(load_song("clear-as-water.mp3"));
+                    std::thread::park();
+                });
+                threads.push(thread);
+            }
+            _ => {}
         }
     }
 }
@@ -45,11 +57,14 @@ fn load_song(path: &str) -> File {
     File::open(path).unwrap()
 }
 
+fn empty_sink() -> Sink {
+    let device = rodio::default_output_device().unwrap();
+    Sink::new(&device)
+}
+
 fn play(song: File) -> Sink {
     let device = rodio::default_output_device().unwrap();
-    let sink = Sink::new(&device);
-    let decoder = rodio::Decoder::new(BufReader::new(song)).unwrap();
-    sink.append(decoder);
+    let sink = rodio::play_once(&device, BufReader::new(song)).unwrap();
     sink
 }
 
