@@ -60,26 +60,7 @@ fn load_song(path: &str) -> File {
     File::open(path).unwrap()
 }
 
-fn empty_sink() -> Sink {
-    let device = rodio::default_output_device().unwrap();
-    Sink::new(&device)
-}
-
 fn play(song: File) -> Sink {
     let device = rodio::default_output_device().unwrap();
-    let sink = rodio::play_once(&device, BufReader::new(song)).unwrap();
-    sink
-}
-
-fn pause(sink: &Sink) -> &Sink {
-    sink.pause();
-    sink
-}
-
-fn resume(sink: &Sink) -> &Sink {
-    if sink.empty() {
-        return sink;
-    }
-    sink.play();
-    sink
+    rodio::play_once(&device, BufReader::new(song)).unwrap()
 }
