@@ -7,13 +7,13 @@ use std::thread::JoinHandle;
 fn main() {
     let (tx, rx) = mpsc::channel();
     let handler = input_thread(tx);
-    song_thread(rx);
+
+    start_song(rx);
     handler.join().unwrap();
 }
 
 fn input_thread(tx: Sender<String>) -> JoinHandle<()> {
     std::thread::spawn(move || loop {
-        println!("'s' to start. 'p' to pause. 'x' to exit.");
         let _ = stdout().flush();
         let mut s = String::new();
         stdin()
@@ -25,40 +25,35 @@ fn input_thread(tx: Sender<String>) -> JoinHandle<()> {
         if let Some('\r') = s.chars().next_back() {
             s.pop();
         }
-        println!("You typed: {}", s);
         let tx1 = mpsc::Sender::clone(&tx);
         tx1.send(s).unwrap();
     })
 }
 
-fn song_thread(rx: Receiver<String>) {
-    let mut threads: Vec<std::thread::JoinHandle<()>> = Vec::new();
-    let sink = empty_sink();
-
-    for s in rx {
-        match s.as_ref() {
-            "p" => { // pause
-                let parked_thread = threads.remove(0);
-                parked_thread.thread().unpark();
-                parked_thread.join().unwrap();
-            }
-            "s" => { // start
-                let thread = std::thread::spawn(move || {
-                    let sink = play(load_song("clear-as-water.mp3"));
-                    std::thread::park();
-                    // How to expose this sink outside the thread?
+fn start_song(rx: Receiver<String>) {
+    let sink = play(load_song("clear-as-water.mp3"));
+    println!("Playing song...");
+    'song: loop {
+        for s in &rx {
+            match s.as_ref() {
+                "p" => {
                     sink.pause();
-                    println!("unparked");
-                });
-                threads.push(thread);
+                    println!("paused...");
+                }
+                "r" => {
+                    println!("resuming...");
+                    sink.play();
+                }
+                "s" => {
+                    sink.stop();
+                    println!("stopped");
+                    break 'song;
+                }
+                _ => {}
             }
-            "r" => { // resume
-                sink.play();
-                sink.sleep_until_end();
-            }
-            _ => {}
         }
     }
+    println!("i'm out of inifite loop");
 }
 
 fn load_song(path: &str) -> File {
