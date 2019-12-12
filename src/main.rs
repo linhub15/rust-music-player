@@ -37,16 +37,22 @@ fn song_thread(rx: Receiver<String>) {
 
     for s in rx {
         match s.as_ref() {
-            "p" => {
-                threads.remove(0).thread().unpark();
-                let sink = pause(&sink);
+            "p" => { // pause
+                let parked_thread = threads.remove(0);
+                parked_thread.thread().unpark();
+                parked_thread.join().unwrap();
+                sink.pause();
             }
-            "s" => {
+            "s" => { // start
                 let thread = std::thread::spawn(move || {
                     let sink = play(load_song("clear-as-water.mp3"));
                     std::thread::park();
                 });
                 threads.push(thread);
+            }
+            "r" => { // resume
+                sink.play();
+                sink.sleep_until_end();
             }
             _ => {}
         }
