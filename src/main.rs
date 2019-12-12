@@ -41,12 +41,14 @@ fn song_thread(rx: Receiver<String>) {
                 let parked_thread = threads.remove(0);
                 parked_thread.thread().unpark();
                 parked_thread.join().unwrap();
-                sink.pause();
             }
             "s" => { // start
                 let thread = std::thread::spawn(move || {
                     let sink = play(load_song("clear-as-water.mp3"));
                     std::thread::park();
+                    // How to expose this sink outside the thread?
+                    sink.pause();
+                    println!("unparked");
                 });
                 threads.push(thread);
             }
