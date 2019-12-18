@@ -1,5 +1,12 @@
 # rust-music-player
-Music management app for djs built in rust
+A music player built in Rust (Rodio)
+
+`cargo build` - restores all dependencies and ...builds
+
+`cargo run` - runs in dev mode
+* `p` - pause song
+* `r` - resume song
+* `s` - stop song
 
 # Dependencies
 rodio
@@ -8,23 +15,13 @@ rodio
 * libsdl2-dev needed for rodio
 
 ## Goals
-Open and play an mp3 file
+- [ ] Stop song thread when song finishes...
+- [x] Open and play an mp3 file
+- [x] Pause song
+- [x] Resume song
+- [x] Stop song
 
 
-## Future Goals
-* open music file
-* play music (mp3)
-* pause music
-
-
-## super future goals
+## Future
+* seek
 * playlists
-* smart playlists
-* shuffle
-* display album art
-* cross platform
-* many more
-* syncing to devices
-* mobile app?
-* web app
-* Integrate with Serato?
